@@ -12,9 +12,20 @@ contract FundMeTest is Test {
     FundMe public fundMe;
     HelperConfig public helperConfig;
 
+    address public constant USER = address(1);
+    uint256 public constant STARTING_USER_BALANCE = 10000 * 10 ** 18;
+
     function setUp() external {
         DeployFundMe deploy = new DeployFundMe();
         (fundMe, helperConfig) = deploy.run();
+        vm.deal(USER, STARTING_USER_BALANCE);
+    }
+
+    function testPriceFeedSetCorrectly() public {
+        address retreivedPriceFeed = address(fundMe.getPriceFeed());
+        // (address expectedPriceFeed) = helperConfig.activeNetworkConfig();
+        address expectedPriceFeed = helperConfig.activeNetworkConfig();
+        assertEq(retreivedPriceFeed, expectedPriceFeed);
     }
 
     function testMinimumDollarIs10() public {
@@ -35,5 +46,15 @@ contract FundMeTest is Test {
         // next line should revert
         vm.expectRevert();
         fundMe.fund(); // we don't send any ETH
+    }
+
+    function testFundUpdatesFunded() public {
+        uint256 amount = 11 * 10 ** 18;
+
+        vm.startPrank(USER); // the next tx will be sent by USER
+        fundMe.fund{value: amount}();
+        vm.stopPrank();
+
+        assertEq(fundMe.getAddressToAmountFunded(address(USER)), amount);
     }
 }
