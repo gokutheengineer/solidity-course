@@ -68,6 +68,25 @@ contract FundMe {
         require(callSuccess, "Call failed");
     }
 
+    function withdrawCheap() public onlyOwner {
+        address[] memory m_funders = s_funders;
+        for (
+            uint256 funderIndex = 0;
+            funderIndex < m_funders.length;
+            funderIndex++
+        ) {
+            address funder = m_funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
+        }
+        s_funders = new address[](0);
+
+        // call, forward all gas or set gas, returns bool
+        (bool callSuccess, ) = payable(msg.sender).call{
+            value: address(this).balance
+        }("");
+        require(callSuccess, "Call failed");
+    }
+
     function getAddressToAmountFunded(
         address fundingAddress
     ) public view returns (uint256) {
